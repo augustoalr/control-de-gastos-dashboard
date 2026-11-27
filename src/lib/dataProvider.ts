@@ -1,6 +1,6 @@
 import seedJson from '../../public/data/seed.json';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { CATEGORIES, type DashboardData, type Expense, type Month, type TopSpender, type Topup } from '../types';
+import { CATEGORIES, type DashboardData, type Expense, type Month, type TopSpender, type Topup, type UserSummary } from '../types';
 
 // ─── Contrato de datos ──────────────────────────────────────────────────────
 // La UI solo habla con este contrato. Hoy hay dos implementaciones:
@@ -19,6 +19,16 @@ export interface DataProvider {
   deleteLastMonth(): Promise<void>;
   /** Top acumulado. monthId null = total de todos los meses. */
   getTopSpenders(monthId: string | null, limit?: number): Promise<TopSpender[]>;
+  /**
+   * De quién se ven los datos (null = los míos). Solo admin/manager ven
+   * a otros; la base de datos (RLS) manda: si no tienes permiso, no
+   * llegan sus filas aunque la pantalla lo pida.
+   */
+  setViewUserId(userId: string | null): void;
+  /** Usuarios visibles para el selector y el Top (tú + subordinados). */
+  getViewableUsers(): Promise<UserSummary[]>;
+  /** Id del usuario con la sesión (en local, el usuario de ejemplo). */
+  getCurrentUserId(): Promise<string | null>;
 }
 
 export interface NewExpense {
@@ -121,6 +131,18 @@ function withRecomputed(data: DashboardData): DashboardData {
 }
 
 export class LocalProvider implements DataProvider {
+  // En local solo existe un usuario (Augusto, seed.json): el cambio de
+  // usuario no hace nada y el selector no se muestra.
+  setViewUserId(): void {}
+
+  async getViewableUsers(): Promise<UserSummary[]> {
+    return [{ userId: 'u-augusto', name: 'Augusto', isYou: true }];
+  }
+
+  async getCurrentUserId(): Promise<string | null> {
+    return 'u-augusto';
+  }
+
   async getDashboard(): Promise<DashboardData> {
     await new Promise((r) => setTimeout(r, 120)); // simula red, sin mentir
     return withRecomputed(loadLocal());
@@ -237,9 +259,29 @@ export class LocalProvider implements DataProvider {
 // Las reglas (máx. 16 gastos, saldo = apertura + recargas - gastos) viven
 // en la base de datos (triggers + vistas), no en el cliente.
 export class SupabaseProvider implements DataProvider {
+  private viewUserId: string | null = null;
+
   private client() {
     if (!supabase) throw new Error('Supabase no está configurado. Revisa VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.');
     return supabase;
+  }
+
+  setViewUserId(userId: string | null): void {
+    this.viewUserId = userId;
+  }
+
+  async getCurrentUserId(): Promise<string | null> {
+    const db = this.client();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    return user?.id ?? null;
+  }
+
+  /** Usuarios que puedes ver: el Top total ya solo trae a esos (RPC). */
+  async getViewableUsers(): Promise<UserSummary[]> {
+    const rows = await this.getTopSpenders(null, 50);
+    return rows.map((r) => ({ userId: r.userId, name: r.name, isYou: r.isYou }));
   }
 
   async getDashboard(): Promise<DashboardData> {
@@ -256,8 +298,11 @@ export class SupabaseProvider implements DataProvider {
     if (mErr) throw mErr;
     if (eErr) throw eErr;
     if (tErr) throw tErr;
-    const months: Month[] = ((mRows ?? []) as Record<string, unknown>[]).map((r) => ({
+    const months: Month[] = ((mRows ?? []) as Record<string, unknown>[])
+      .filter((r) => !this.viewUserId || (r.user_id as string) === this.viewUserId)
+      .map((r) => ({
       id: r.id as string,
+      userId: r.user_id as string,
       seq: r.seq as number,
       tab: r.tab as string,
       label: r.label as string,

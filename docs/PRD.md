@@ -20,7 +20,7 @@ En una pantalla, Augusto ve cuánto gastó, cuánto le queda y quién gasta más
 6. Backend Supabase (Postgres + Auth + RLS) con `DataProvider` local/Supabase; dinero en céntimos enteros.
 
 ## 5. Fuera de alcance (por ahora)
-- Sin Auth UI todavía (sin pantalla de inicio de sesión; la sesión y los roles llegan en T-06).
+- Auth UI (T-06): login, roles y selector "ver los gastos de…" (antes fuera de alcance; ahora hecho).
 - Sin export Excel/PDF idéntico al Excel original (el MVP solo exporta CSV del mes; el Excel/PDF es Fase 2, con una Edge Function).
 - Sin tests automatizados (Fase 2: Vitest + Playwright).
 - Sin notificaciones, sin presupuestos por categoría con alertas, sin multi-moneda (solo AED).
@@ -42,4 +42,4 @@ En una pantalla, Augusto ve cuánto gastó, cuánto le queda y quién gasta más
 - Supabase Free pausa el proyecto a los 7 días sin actividad → mitigación: entrar y generar actividad cada semana, o pasar a Pro (25 $/mes) cuando haya usuarios reales.
 - Repo privado Free no activa GitHub Pages → mitigación: publicar con seed de demo en repo público, o desplegar desde el repo privado en Vercel/Netlify (ver docs/DEPLOY.md).
 - Datos reales en el seed local → mitigación: repo privado, nunca hacer público con el seed real (ver SECURITY.md).
-- Sin Auth UI todavía → mitigación: el MVP local solo tiene a Augusto; la multiusuario real llega con T-06 y Revisor en lo delicado.
+- Sin Auth UI todavía → resuelto en T-06 (login, roles y selector).

@@ -217,8 +217,11 @@ cifras en `tabular-nums`, coma decimal.
 
 ## 7. Qué NO hace el MVP (a propósito)
 
-- Sin Auth en la UI todavía: el proveedor local no la necesita y el
-  de Supabase asume sesión (se añade login en Fase 2; RLS ya está).
+- Auth en la UI (T-06): pantalla de login (correo + contraseña, Supabase
+  Auth), sesión persistente, rutas protegidas en modo Supabase y modo
+  local sin login (demo con datos de ejemplo). El rol (profiles.role)
+  decide el selector "ver los gastos de…" y el drill-down del Top; un
+  viewer solo ve totales vía RPC, nunca el detalle de otros (RLS manda).
 - Sin exportar Excel/PDF idéntico: es una Edge Function, no un botón
   del cliente. El MVP exporta CSV del mes.
 - Sin multi-usuario en la UI: la BD ya es multi-usuario por RLS.
@@ -228,7 +231,7 @@ cifras en `tabular-nums`, coma decimal.
 
 ## 8. Escalado (hoja de ruta)
 
-1. **Fase 2:** Auth (email), Edge Function de export Excel/PDF,
+1. **Fase 2:** Edge Function de export Excel/PDF,
    tests Vitest + Playwright, React Query.
 2. **Fase 3:** multi-mes en URL (`?month=EXP5`), metas con cifra,
    presupuestos por categoría, Realtime de Supabase.

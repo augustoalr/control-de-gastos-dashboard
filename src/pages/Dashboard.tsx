@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDashboard } from '../hooks/useDashboard';
 import { api } from '../lib/api';
 import { DATA_SOURCE } from '../lib/supabase';
+import type { SessionUser } from '../lib/auth';
 import { formatAED, formatPct } from '../lib/money';
-import { availableCents, spentPct, type Expense } from '../types';
+import { availableCents, spentPct, type Expense, type UserSummary } from '../types';
 import Sidebar from '../components/Sidebar';
 import MonthSelector from '../components/MonthSelector';
 import ExpenseChart from '../components/ExpenseChart';
@@ -16,8 +17,19 @@ import { CATEGORY_COLORS } from '../components/categoryColors';
 
 // Página única del MVP. Estado de UI local (mes seleccionado, formularios);
 // estado del servidor en useDashboard. El mes por defecto es noviembre,
-// el último mes real (EXP5), como en la maqueta del diseñador.
-export default function Dashboard() {
+// el último mes (EXP5), como en la maqueta del diseñador.
+//
+// Auth (T-06): en modo Supabase, `auth` trae al usuario con su rol.
+// Solo admin/manager ven el selector "ver los gastos de…" y pueden tocar
+// un nombre del Top para ver sus gastos. En ese caso la vista es de solo
+// lectura: la escritura sigue siendo solo lo propio (RLS lo impone en la
+// BD). Un member o viewer nunca ve el selector ni el detalle de otros.
+// En modo local no hay login: es la demo con datos de ejemplo.
+export default function Dashboard({
+  auth,
+}: {
+  auth: { user: SessionUser; onSignOut: () => void } | null;
+}) {
   const { data, loading, error, refresh } = useDashboard();
   const [selectedId, setSelectedId] = useState('m5');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -25,6 +37,31 @@ export default function Dashboard() {
   const [editing, setEditing] = useState<Expense | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
+  const [viewUserName, setViewUserName] = useState<string | null>(null);
+  const [users, setUsers] = useState<UserSummary[]>([]);
+
+  const role = auth?.user.role ?? 'member';
+  const canManageUsers = role === 'admin' || role === 'manager';
+  const viewingOther = viewUserId !== null && viewUserId !== auth?.user.id;
+  const readOnly = viewingOther;
+
+  // Lista de usuarios visibles para el selector (solo admin/manager).
+  useEffect(() => {
+    if (!canManageUsers) return;
+    let cancelled = false;
+    api
+      .getViewableUsers()
+      .then((u) => {
+        if (!cancelled) setUsers(u);
+      })
+      .catch(() => {
+        if (!cancelled) setUsers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canManageUsers]);
 
   const month = useMemo(
     () => data?.months.find((m) => m.id === selectedId) ?? data?.months[data.months.length - 1],
@@ -57,6 +94,22 @@ export default function Dashboard() {
     }
   }
 
+  /** Cambia de quién se ven los gastos y recarga el dashboard. */
+  async function changeViewUser(userId: string | null, name: string | null) {
+    setActionError(null);
+    setBusy(true);
+    try {
+      api.setViewUser(userId);
+      setViewUserId(userId);
+      setViewUserName(name);
+      await refresh();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'No se pudo cambiar de usuario.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function exportCsv() {
     if (!month) return;
     const rows = [['fecha', 'monto_aed', 'categoria']];
@@ -84,8 +137,59 @@ export default function Dashboard() {
               {month.tab} · {month.refNo} · {month.expenses.length} de 16 gastos
             </p>
           </div>
-          <MonthSelector months={data.months} selectedId={month.id} onSelect={setSelectedId} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {auth ? (
+              <>
+                <span className="muted" style={{ fontSize: 13 }}>
+                  {auth.user.displayName} · {auth.user.role}
+                </span>
+                <button className="btn secondary" type="button" onClick={() => void auth.onSignOut()}>
+                  Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <span className="muted" style={{ fontSize: 13 }}>Demo · datos de ejemplo</span>
+            )}
+            <MonthSelector months={data.months} selectedId={month.id} onSelect={setSelectedId} />
+          </div>
         </div>
+
+        {canManageUsers && users.length > 1 && (
+          <div className="card" style={{ marginBottom: 12 }}>
+            <label htmlFor="view-user" style={{ fontSize: 13, fontWeight: 600 }}>
+              Ver los gastos de…
+            </label>{' '}
+            <select
+              id="view-user"
+              value={viewUserId ?? ''}
+              disabled={busy}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                const name = users.find((u) => u.userId === id)?.name ?? null;
+                void changeViewUser(id, name);
+              }}
+            >
+              <option value="">Mis gastos</option>
+              {users
+                .filter((u) => !u.isYou)
+                .map((u) => (
+                  <option key={u.userId} value={u.userId}>
+                    {u.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
+        {viewingOther && (
+          <div className="error" style={{ background: '#101E33', borderColor: '#3B82F6', color: '#EAF0F8' }}>
+            Viendo los gastos de {viewUserName ?? 'esta persona'} (solo lectura, no se puede añadir
+            ni editar nada).{' '}
+            <button className="btn secondary" type="button" onClick={() => void changeViewUser(null, null)}>
+              Volver a mis gastos
+            </button>
+          </div>
+        )}
 
         {actionError && <div className="error">{actionError}</div>}
 
@@ -145,8 +249,7 @@ export default function Dashboard() {
               centerBottom="total del mes"
             />
             <p className="note">
-              En julio-octubre el 100% fue Pantry &amp; Grocery. En noviembre,
-              81,6% Pantry y 18,4% Other. Las categorías en 0,00 se muestran en gris, no se ocultan.
+              Las categorías en 0,00 se muestran en gris, no se ocultan.
             </p>
           </div>
           <div className="card">
@@ -167,25 +270,34 @@ export default function Dashboard() {
         </section>
 
         <section className="card">
-          <h3>Gastos — {month.label}</h3>
-          <div className="actions">
-            <button className="btn" type="button" onClick={() => { setEditing(null); setShowExpenseForm((v) => !v); }}>
-              Añadir gasto
-            </button>
-            <button className="btn secondary" type="button" onClick={() => setShowTopupForm((v) => !v)}>
-              Registrar recarga
-            </button>
-            <button className="btn secondary" type="button" disabled={busy} onClick={() => void run(() => api.createNextMonth())}>
-              Crear mes nuevo
-            </button>
-            <button className="btn secondary" type="button" disabled={busy} onClick={() => void run(() => api.deleteLastMonth())}>
-              Borrar último mes
-            </button>
-            <button className="btn secondary" type="button" onClick={exportCsv}>
-              Descargar CSV del mes
-            </button>
-          </div>
-          {(showExpenseForm || editing) && (
+          <h3>Gastos — {month.label}{viewingOther ? ` · ${viewUserName ?? ''}` : ''}</h3>
+          {!readOnly && (
+            <div className="actions">
+              <button className="btn" type="button" onClick={() => { setEditing(null); setShowExpenseForm((v) => !v); }}>
+                Añadir gasto
+              </button>
+              <button className="btn secondary" type="button" onClick={() => setShowTopupForm((v) => !v)}>
+                Registrar recarga
+              </button>
+              <button className="btn secondary" type="button" disabled={busy} onClick={() => void run(() => api.createNextMonth())}>
+                Crear mes nuevo
+              </button>
+              <button className="btn secondary" type="button" disabled={busy} onClick={() => void run(() => api.deleteLastMonth())}>
+                Borrar último mes
+              </button>
+              <button className="btn secondary" type="button" onClick={exportCsv}>
+                Descargar CSV del mes
+              </button>
+            </div>
+          )}
+          {readOnly && (
+            <div className="actions">
+              <button className="btn secondary" type="button" onClick={exportCsv}>
+                Descargar CSV del mes
+              </button>
+            </div>
+          )}
+          {!readOnly && (showExpenseForm || editing) && (
             <ExpenseForm
               monthId={month.id}
               monthLabel={month.label}
@@ -194,11 +306,12 @@ export default function Dashboard() {
               onCancel={() => { setShowExpenseForm(false); setEditing(null); }}
             />
           )}
-          {showTopupForm && (
+          {!readOnly && showTopupForm && (
             <TopupForm monthId={month.id} monthLabel={month.label} onDone={() => { setShowTopupForm(false); void refresh(); }} />
           )}
           <ExpenseTable
             expenses={month.expenses}
+            readOnly={readOnly}
             onEdit={(e) => { setEditing(e); setShowExpenseForm(true); }}
             onDelete={(id) => void run(() => api.deleteExpense(id))}
           />
@@ -208,7 +321,12 @@ export default function Dashboard() {
           </p>
         </section>
       </main>
-      <ReportPanel month={month} data={data} />
+      <ReportPanel
+        month={month}
+        data={data}
+        canDrillDown={canManageUsers}
+        onSelectUser={(userId, name) => void changeViewUser(userId, name)}
+      />
     </div>
   );
 }

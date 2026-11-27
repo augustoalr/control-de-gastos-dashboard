@@ -6,14 +6,19 @@ import type { TopSpender, TopView } from '../types';
 // Top acumulado, a un lado (panel derecho). Dos vistas con cambio:
 // "Mes" = mes seleccionado, "Total" = acumulado de todos los meses.
 // Solo muestra totales, nunca el detalle gasto a gasto de otra persona.
-// El drill-down (tocar un nombre para ver sus gastos) es Fase 2, cuando
-// el dashboard pueda cambiar de usuario; hoy el Top es de consulta.
+// El drill-down (tocar un nombre para ver sus gastos) solo está activo
+// cuando el rol lo permite (admin/manager); un viewer o un member nunca
+// ve el detalle de otros.
 export default function TopAcumulado({
   monthId,
   monthLabel,
+  canDrillDown = false,
+  onSelectUser,
 }: {
   monthId: string;
   monthLabel: string;
+  canDrillDown?: boolean;
+  onSelectUser?: (userId: string, name: string) => void;
 }) {
   const [view, setView] = useState<TopView>('month');
   const [rows, setRows] = useState<TopSpender[]>([]);
@@ -72,11 +77,9 @@ export default function TopAcumulado({
         !error &&
         rows.map((r, i) => {
           const pct = total > 0 ? (r.totalCents / total) * 100 : 0;
-          return (
-            <div
-              key={r.userId}
-              style={{ width: '100%', textAlign: 'left', padding: '10px 8px' }}
-            >
+          const clickable = canDrillDown && !!onSelectUser && !r.isYou;
+          const inner = (
+            <>
               <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                 <span>
                   <strong>{i + 1}. {r.name}</strong>
@@ -102,12 +105,39 @@ export default function TopAcumulado({
               </span>
               <span className="muted" style={{ fontSize: 12 }}>
                 {pct.toLocaleString('es-ES', { maximumFractionDigits: 1 })}% del total · {r.expenseCount} gastos
+                {clickable ? ' · toca para ver sus gastos' : ''}
               </span>
+            </>
+          );
+          if (clickable) {
+            return (
+              <button
+                key={r.userId}
+                type="button"
+                title={`Ver los gastos de ${r.name}`}
+                onClick={() => onSelectUser?.(r.userId, r.name)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '10px 8px', background: 'transparent',
+                  border: '1px solid transparent', borderRadius: 10,
+                  cursor: 'pointer', color: 'inherit', font: 'inherit',
+                }}
+              >
+                {inner}
+              </button>
+            );
+          }
+          return (
+            <div
+              key={r.userId}
+              style={{ width: '100%', textAlign: 'left', padding: '10px 8px' }}
+            >
+              {inner}
             </div>
           );
         })}
       <p className="note">
-        En local solo está Augusto (datos reales). En Supabase, aquí salen
+        En local solo está Augusto (datos de ejemplo). En Supabase, aquí salen
         tus subordinados visibles, ordenados por acumulado.
       </p>
     </section>
