@@ -1,4 +1,4 @@
-# APAGADO hasta decisión de Augusto: activarlo publicaría public/data/seed.json con datos reales
+# Publica la app en GitHub Pages contra Supabase (URL y clave pública en los secrets del repo)
 name: Deploy a GitHub Pages
 on:
   workflow_dispatch:
@@ -19,14 +19,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      # Por defecto, Pages publica la demo local (seed.json). Para publicar
-      # contra Supabase, define estos secrets en el repo y descomenta las
-      # dos líneas de env de abajo.
+      # Pages publica contra Supabase: la URL y la clave pública se leen
+      # de los secrets del repo (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY).
       - run: npm run build
-        # env:
-        #   VITE_DATA_SOURCE: supabase
-        #   VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-        #   VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        env:
+          VITE_DATA_SOURCE: supabase
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
