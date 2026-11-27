@@ -135,12 +135,12 @@ Reglas (triggers / funciones):
 | `updated_at` automático | trigger `set_updated_at()` |
 | Crear mes siguiente (EXPn+1, apertura = saldo anterior) | RPC `create_next_month()` |
 | Borrar solo el último mes | RPC `delete_last_month()` |
-| Nadie se sube el rol solo (solo un admin asigna roles) | trigger `profiles_role_guard()` (migración 03) |
+| Nadie se sube el rol solo (los roles de otros solo se asignan desde el SQL Editor) | trigger `profiles_role_guard()` (migración 03) |
 
 RLS (las 4 tablas): `FOR ALL USING (user_id = auth.uid())
 WITH CHECK (user_id = auth.uid())`. En `profiles`, `id = auth.uid()`.
 
-El rol vive en `profiles.role` (`admin`, `manager`, `member`, `viewer`, por defecto `member`). La policy "own profile" deja a cada usuario actualizar su propia fila, así que el rol lo protege el trigger `profiles_role_guard()` (migración 03): poner o cambiar `role` solo lo puede hacer quien ya es admin; crear el perfil con el rol por defecto y cambiar nombre o moneda siguen funcionando. El primer admin se nombra desde el SQL Editor (`UPDATE profiles SET role = 'admin' WHERE id = '…'`), porque al principio no hay ningún admin.
+El rol vive en `profiles.role` (`admin`, `manager`, `member`, `viewer`, por defecto `member`). La policy "own profile" deja a cada usuario actualizar su propia fila, así que el rol lo protege el trigger `profiles_role_guard()` (migración 03): poner o cambiar `role` solo lo puede hacer quien ya es admin; crear el perfil con el rol por defecto y cambiar nombre o moneda siguen funcionando. El primer admin se nombra desde el SQL Editor (`UPDATE profiles SET role = 'admin' WHERE id = '…'`), porque al principio no hay ningún admin. Los roles de otros usuarios se asignan siempre desde el SQL Editor: la app no tiene pantalla para asignar roles y la policy "own profile" solo deja a cada usuario tocar su propia fila.
 
 Datos de ejemplo que validan el esquema (34 gastos inventados, jul–nov 2026):
 

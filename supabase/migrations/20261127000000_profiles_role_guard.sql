@@ -12,14 +12,17 @@
 -- Casos que permite:
 --   * Crear el perfil propio con el rol por defecto ('member').
 --   * Cambiar nombre o moneda sin tocar el rol.
---   * Un admin que asigna o cambia el rol de cualquiera (incluido el suyo).
+--   * Un admin que cambia su propio rol (desde la app solo llega a su
+--     propia fila: la policy "own profile" no deja tocar la de otros).
 --   * Trabajo directo en la base de datos (SQL Editor, service_role):
 --     ahí auth.uid() es null y el trigger no bloquea nada.
 --
 -- Arranque del primer admin: como al principio no hay ningún admin, el
 -- primer rol 'admin' se pone desde el SQL Editor de Supabase
 -- (UPDATE profiles SET role = 'admin' WHERE id = '<uuid del usuario>';).
--- Después, ese admin ya puede asignar roles desde la app.
+-- Los roles de otros usuarios se asignan SIEMPRE desde el SQL Editor:
+-- la app no tiene pantalla para asignar roles y la policy "own profile"
+-- solo deja a cada usuario tocar su propia fila.
 
 create or replace function public.prevent_role_escalation()
 returns trigger

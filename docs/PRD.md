@@ -36,7 +36,7 @@ En una pantalla, Augusto ve cuánto gastó, cuánto le queda y quién gasta más
 - Presupuesto: cero (Supabase Free, GitHub Free) · Plazo: sin fecha fija · Datos sensibles: sí, gastos personales reales de Augusto (viven solo en su Supabase privado, con RLS; el repo es público y el seed local lleva solo datos de ejemplo).
 
 ## 9. Criterio de éxito
-- Augusto abre el dashboard, cambia de mes, ve los totales reales de ese mes (iguales que en el Excel) y el Top Mes/Total, y añade un gasto de prueba que aparece en el total.
+- Augusto abre el dashboard, cambia de mes, ve los totales de ejemplo de ese mes (en la demo pública; los reales solo viven en su Supabase privado) y el Top Mes/Total, y añade un gasto de prueba que aparece en el total.
 
 ## 10. Riesgos
 - Supabase Free pausa el proyecto a los 7 días sin actividad → mitigación: entrar y generar actividad cada semana, o pasar a Pro (25 $/mes) cuando haya usuarios reales.
