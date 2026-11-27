@@ -37,6 +37,8 @@ export interface CategoryBreakdown {
 
 export interface Month {
   id: string;
+  /** Dueño del mes. Solo existe en Supabase (en local no se usa). */
+  userId?: string;
   seq: number;
   tab: string; // EXP1, EXP2, ...
   label: string; // "Noviembre 2026"
@@ -62,6 +64,16 @@ export interface TopSpender {
 }
 
 export type TopView = 'month' | 'total';
+
+/** Roles de profiles.role (migración 02). Los hace cumplir RLS en la BD. */
+export type Role = 'admin' | 'manager' | 'member' | 'viewer';
+
+/** Persona visible en el selector "ver los gastos de…" y en el Top. */
+export interface UserSummary {
+  userId: string;
+  name: string;
+  isYou: boolean;
+}
 
 export interface ReportRow {
   date: string;

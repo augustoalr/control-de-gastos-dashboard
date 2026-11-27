@@ -32,12 +32,14 @@ Modo profesor: SÍ   ·   Nivel de riesgo: 3
 ## Git
 - Commits: Conventional Commits (`feat(T-XX): …`, `fix: …`). Versiones SemVer con tag `vX.Y.Z`.
 - Push desde la terminal (funciona, 2026-11-26): deploy key «Tico VM» (ed25519, huella SHA256:hMvJuOEJr0qO63Bbuw+mCECRIwDOkTdKP8cV/7y5p+A) con write access, solo en este repo. El conector `push-files` da 403 en git/trees y `create_or_update_file` pide una tarjeta de aprobación por archivo: no usar para snapshots. SSH directo bloqueado por el proxy de salida; funciona por `ssh.github.com:443` con ProxyCommand `nc -X connect -x 198.19.0.1:3128 %h %p`. Host `github-cdg` en `/root/.ssh/config` (ssh corre como root, su home es /root, no /home/hatch) con la llave en `/root/.ssh/id_ed25519`. Probar con `ssh -T -o BatchMode=yes github-cdg` → «Hi augustoalr/control-de-gastos-dashboard!». Remote: `git@github-cdg:augustoalr/control-de-gastos-dashboard.git`. No hacer push mientras una subida por navegador esté en curso (carrera de commits).
+- OJO (2026-11-27): `/root/.ssh/` NO persiste entre reemplazos de la VM: tras un reinicio desaparecen config y llave y el push falla con «Connection reset». Las llaves viven en `/home/hatch/.ssh/` (sí persiste): si el push falla así, copiar llave + config a `/root/.ssh/` y reintentar. Además, el ajuste de Muse «Outbound SSH» debe estar en ON.
+- Deploy key vigente desde 2026-11-27: «Tico VM» segunda llave `id_ed25519_cdg2` (huella SHA256:aSUcsR0R0pCfxnnPwQaW0v7PCWgOZXgn3OVhec8X64w). La primera llave (hMvJuOEJ…) quedó retenida por GitHub tras borrar el repo viejo («Key is already in use») y NO se puede reutilizar como deploy key; la segunda es la activa en el repo nuevo.
 
 ## Dependencias
 - Ninguna nueva sin justificarla. Comprobar que existe en el registro oficial y su licencia.
 
 ## Base de datos
-- Fuente de verdad del esquema: `supabase/migrations/` (`20261124000000_init.sql`, `20261126000000_top_spenders.sql`).
+- Fuente de verdad del esquema: `supabase/migrations/` (`20261124000000_init.sql`, `20261126000000_top_spenders.sql`, `20261127000000_profiles_role_guard.sql`).
 - Tablas: `profiles`, `months`, `expenses`, `topups`, `manager_members`. Vistas: `month_summary`, `report_ledger`. RPCs: `create_next_month()`, `delete_last_month()`, `get_top_spenders(p_month_id, p_limit)`.
 - Toda consulta se verifica contra el esquema real antes de usarse.
 - Cambios de esquema o de RLS = tarea [DELICADA] → Revisor obligatorio.

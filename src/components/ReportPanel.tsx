@@ -3,10 +3,25 @@ import type { DashboardData, Month } from '../types';
 import { CATEGORY_COLORS } from './categoryColors';
 import TopAcumulado from './TopAcumulado';
 
-export default function ReportPanel({ month, data }: { month: Month; data: DashboardData }) {
+export default function ReportPanel({
+  month,
+  data,
+  canDrillDown = false,
+  onSelectUser,
+}: {
+  month: Month;
+  data: DashboardData;
+  canDrillDown?: boolean;
+  onSelectUser?: (userId: string, name: string) => void;
+}) {
   return (
     <aside className="right-panel">
-      <TopAcumulado monthId={month.id} monthLabel={month.label} />
+      <TopAcumulado
+        monthId={month.id}
+        monthLabel={month.label}
+        canDrillDown={canDrillDown}
+        onSelectUser={onSelectUser}
+      />
       <h2 style={{ marginTop: 24 }}>Desglose — {month.label}</h2>
       {month.breakdown.map((b) => (
         <div key={b.category} className="breakdown-row">

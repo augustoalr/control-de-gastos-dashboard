@@ -1,6 +1,6 @@
 import seedJson from '../../public/data/seed.json';
 import { supabase, isSupabaseConfigured } from './supabase';
-import { CATEGORIES, type DashboardData, type Expense, type Month, type TopSpender, type Topup } from '../types';
+import { CATEGORIES, type DashboardData, type Expense, type Month, type TopSpender, type Topup, type UserSummary } from '../types';
 
 // ─── Contrato de datos ──────────────────────────────────────────────────────
 // La UI solo habla con este contrato. Hoy hay dos implementaciones:
@@ -19,6 +19,16 @@ export interface DataProvider {
   deleteLastMonth(): Promise<void>;
   /** Top acumulado. monthId null = total de todos los meses. */
   getTopSpenders(monthId: string | null, limit?: number): Promise<TopSpender[]>;
+  /**
+   * De quién se ven los datos (null = los míos). Solo admin/manager ven
+   * a otros; la base de datos (RLS) manda: si no tienes permiso, no
+   * llegan sus filas aunque la pantalla lo pida.
+   */
+  setViewUserId(userId: string | null): void;
+  /** Usuarios visibles para el selector y el Top (tú + subordinados). */
+  getViewableUsers(): Promise<UserSummary[]>;
+  /** Id del usuario con la sesión (en local, el usuario de ejemplo). */
+  getCurrentUserId(): Promise<string | null>;
 }
 
 export interface NewExpense {
@@ -121,6 +131,18 @@ function withRecomputed(data: DashboardData): DashboardData {
 }
 
 export class LocalProvider implements DataProvider {
+  // En local solo existe un usuario (Augusto, seed.json): el cambio de
+  // usuario no hace nada y el selector no se muestra.
+  setViewUserId(): void {}
+
+  async getViewableUsers(): Promise<UserSummary[]> {
+    return [{ userId: 'u-augusto', name: 'Augusto', isYou: true }];
+  }
+
+  async getCurrentUserId(): Promise<string | null> {
+    return 'u-augusto';
+  }
+
   async getDashboard(): Promise<DashboardData> {
     await new Promise((r) => setTimeout(r, 120)); // simula red, sin mentir
     return withRecomputed(loadLocal());
@@ -237,13 +259,59 @@ export class LocalProvider implements DataProvider {
 // Las reglas (máx. 16 gastos, saldo = apertura + recargas - gastos) viven
 // en la base de datos (triggers + vistas), no en el cliente.
 export class SupabaseProvider implements DataProvider {
+  private viewUserId: string | null = null;
+
   private client() {
     if (!supabase) throw new Error('Supabase no está configurado. Revisa VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.');
     return supabase;
   }
 
+  setViewUserId(userId: string | null): void {
+    this.viewUserId = userId;
+  }
+
+  async getCurrentUserId(): Promise<string | null> {
+    const db = this.client();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    return user?.id ?? null;
+  }
+
+  /**
+   * Usuarios que puedes ver: el propio + los subordinados (manager) o
+   * todos (admin), leídos de profiles. La policy profiles_read_visible
+   * ya solo devuelve esos, así que la lista sale de la base de datos,
+   * no del Top: un subordinado sin gastos también aparece en el selector.
+   */
+  async getViewableUsers(): Promise<UserSummary[]> {
+    const db = this.client();
+    const me = await this.getCurrentUserId();
+    const { data, error } = await db
+      .from('profiles')
+      .select('id, display_name')
+      .order('display_name', { ascending: true });
+    if (error) throw error;
+    return ((data ?? []) as Record<string, unknown>[])
+      .map((p) => ({
+        userId: p.id as string,
+        name: (p.display_name as string) || 'Sin nombre',
+        isYou: me ? (p.id as string) === me : false,
+      }))
+      .sort((a, b) => Number(b.isYou) - Number(a.isYou));
+  }
+
   async getDashboard(): Promise<DashboardData> {
     const db = this.client();
+    // De quién se ven los datos: el usuario elegido en el selector, y si
+    // no hay ninguno, el de la sesión. Nunca todos a la vez: sin
+    // viewUserId, un admin o un manager ven SOLO lo suyo (lo de otros
+    // llega solo cuando lo pide explícitamente y el rol lo permite).
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    const ownerId = this.viewUserId ?? user?.id ?? null;
+    if (!ownerId) return { months: [], report: recomputeReport([]) };
     // Tres lecturas RLS directas a las tablas (el usuario solo ve lo suyo
     // o lo de sus subordinados) y ensamblaje en cliente. Los totales se
     // recalculan en cliente igual que en local; no se lee month_summary.
@@ -256,8 +324,11 @@ export class SupabaseProvider implements DataProvider {
     if (mErr) throw mErr;
     if (eErr) throw eErr;
     if (tErr) throw tErr;
-    const months: Month[] = ((mRows ?? []) as Record<string, unknown>[]).map((r) => ({
+    const months: Month[] = ((mRows ?? []) as Record<string, unknown>[])
+      .filter((r) => (r.user_id as string) === ownerId)
+      .map((r) => ({
       id: r.id as string,
+      userId: r.user_id as string,
       seq: r.seq as number,
       tab: r.tab as string,
       label: r.label as string,
@@ -309,6 +380,10 @@ export class SupabaseProvider implements DataProvider {
 
   async updateExpense(id: string, input: NewExpense): Promise<Expense> {
     const db = this.client();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    if (!user) throw new Error('No hay sesión iniciada.');
     const { data, error } = await db
       .from('expenses')
       .update({
@@ -325,7 +400,12 @@ export class SupabaseProvider implements DataProvider {
   }
 
   async deleteExpense(id: string): Promise<void> {
-    const { error } = await this.client().from('expenses').delete().eq('id', id);
+    const db = this.client();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    if (!user) throw new Error('No hay sesión iniciada.');
+    const { error } = await db.from('expenses').delete().eq('id', id);
     if (error) throw error;
   }
 

@@ -56,4 +56,7 @@ export const api = {
   createNextMonth: () => provider.createNextMonth(),
   deleteLastMonth: () => provider.deleteLastMonth(),
   getTopSpenders: (monthId: string | null, limit = 10) => provider.getTopSpenders(monthId, limit),
+  setViewUser: (userId: string | null) => provider.setViewUserId(userId),
+  getViewableUsers: () => provider.getViewableUsers(),
+  getCurrentUserId: () => provider.getCurrentUserId(),
 };
