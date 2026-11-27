@@ -39,7 +39,7 @@ Modo profesor: SÍ   ·   Nivel de riesgo: 3
 - Ninguna nueva sin justificarla. Comprobar que existe en el registro oficial y su licencia.
 
 ## Base de datos
-- Fuente de verdad del esquema: `supabase/migrations/` (`20261124000000_init.sql`, `20261126000000_top_spenders.sql`, `20261127000000_profiles_role_guard.sql`).
+- Fuente de verdad del esquema: `supabase/migrations/` (`20261124000000_init.sql`, `20261126000000_top_spenders.sql`, `20261127000000_profiles_role_guard.sql`, `20261128000000_fix_rls_recursion.sql`).
 - Tablas: `profiles`, `months`, `expenses`, `topups`, `manager_members`. Vistas: `month_summary`, `report_ledger`. RPCs: `create_next_month()`, `delete_last_month()`, `get_top_spenders(p_month_id, p_limit)`.
 - Toda consulta se verifica contra el esquema real antes de usarse.
 - Cambios de esquema o de RLS = tarea [DELICADA] → Revisor obligatorio.
