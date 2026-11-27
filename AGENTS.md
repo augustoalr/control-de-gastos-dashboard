@@ -32,6 +32,7 @@ Modo profesor: SÍ   ·   Nivel de riesgo: 3
 ## Git
 - Commits: Conventional Commits (`feat(T-XX): …`, `fix: …`). Versiones SemVer con tag `vX.Y.Z`.
 - Push desde la terminal (funciona, 2026-11-26): deploy key «Tico VM» (ed25519, huella SHA256:hMvJuOEJr0qO63Bbuw+mCECRIwDOkTdKP8cV/7y5p+A) con write access, solo en este repo. El conector `push-files` da 403 en git/trees y `create_or_update_file` pide una tarjeta de aprobación por archivo: no usar para snapshots. SSH directo bloqueado por el proxy de salida; funciona por `ssh.github.com:443` con ProxyCommand `nc -X connect -x 198.19.0.1:3128 %h %p`. Host `github-cdg` en `/root/.ssh/config` (ssh corre como root, su home es /root, no /home/hatch) con la llave en `/root/.ssh/id_ed25519`. Probar con `ssh -T -o BatchMode=yes github-cdg` → «Hi augustoalr/control-de-gastos-dashboard!». Remote: `git@github-cdg:augustoalr/control-de-gastos-dashboard.git`. No hacer push mientras una subida por navegador esté en curso (carrera de commits).
+- OJO (2026-11-27): `/root/.ssh/` NO persiste entre reemplazos de la VM: tras un reinicio desaparecen config y llave y el push falla con «Connection reset». La llave original vive en `/home/hatch/.ssh/id_ed25519` (sí persiste): si el push falla así, copiar llave + config a `/root/.ssh/` y reintentar. Además, el ajuste de Muse «Outbound SSH» debe estar en ON.
 
 ## Dependencias
 - Ninguna nueva sin justificarla. Comprobar que existe en el registro oficial y su licencia.
