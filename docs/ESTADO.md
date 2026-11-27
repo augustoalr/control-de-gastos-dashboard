@@ -1,13 +1,13 @@
 # ESTADO del proyecto
 
-Última actualización: 2026-11-27 08:20 +04 (Asia/Dubái) por Manager (T-09 fusionada y app publicada en Pages)
+Última actualización: 2026-11-27 09:02 +04 (Asia/Dubái) por Manager (T-10 y T-11 fusionadas y aplicadas en vivo; verificación RLS en verde)
 Nivel de riesgo del proyecto: 3 · Modo profesor: SÍ · Lecciones: docs/APRENDIZAJE.md
 Repo: https://github.com/augustoalr/control-de-gastos-dashboard (público, rama main; historial limpio)
 Producción: https://augustoalr.github.io/control-de-gastos-dashboard/ (GitHub Pages, contra Supabase control-de-gastos)
 
 ## Ahora mismo
-- En curso: prueba funcional de Augusto en la app publicada (login + ver sus gastos reales)
-- Próxima tarea propuesta: T-10 — lo que salga de la prueba de Augusto (PASÓ / FALLÓ / NO PUDE PROBAR)
+- En curso: prueba funcional de Augusto en la app publicada (login + ver sus gastos reales) — 2ª vuelta, tras corregir T-10 y T-11
+- Próxima tarea propuesta: T-12 (endurecimiento, menor, del Revisor T-11) — policies `own months` y `own profile` a solo lectura para el usuario normal, escritura de meses solo por RPCs; y quitar el GRANT redundante a service_role
 
 ## Tabla de tareas
 
@@ -22,11 +22,13 @@ Producción: https://augustoalr.github.io/control-de-gastos-dashboard/ (GitHub P
 | T-05 Crear proyecto Supabase y aplicar migraciones | — | — | — | — | ✅ Fusionada | 2026-11-27 | 2026-11-27 | 0 | 0 | [DELICADA] Cuenta risturiz73@gmail.com confirmada con el 2º enlace; proyecto «control-de-gastos» creado (Free, Mumbai ap-south-1, Healthy, ref iszhvpgkuhililsxbuwb); migraciones 01, 02 y 03 aplicadas en vivo sin errores (primera prueba real de la BD); semilla real cargada y verificada (45 gastos = 2.022,86 AED, 4 recargas = 2.000 AED, NOV -22,86 AED); usuario de Auth creado (risturiz73@gmail.com, confirmado, rol admin); `.env` local con URL + anon key (nunca se commitea) |
 | T-06 Auth UI + roles | — | limpio | — | #1 | ✅ Fusionada | 2026-11-27 | 2026-11-27 | 3 | 7+1 | [DELICADA] Login, sesiones, guard de rutas, selector de usuario según rol. Commit 9597a05: Revisor 1ª revisión CAMBIOS NECESARIOS (7 hallazgos, 2 graves: escalada de rol y mezcla de gastos); correcciones en 9fc4f90; 2ª revisión CAMBIOS NECESARIOS (docs prometían asignar roles desde la app); corrección de docs en a226997; 3ª revisión APTO. PR #1, CI verify en verde (14 s), merge squash 6237773. Regla de main ajustada por Augusto: sin aprobación (repo de un solo usuario, el autor no puede aprobarse a sí mismo), PR + check verify obligatorio |
 | T-09 Deploy a GitHub Pages contra Supabase | T-09 deploy Pages | t-09-deploy-pages-supabase | — | #3 | ✅ Fusionada | 2026-11-27 | 2026-11-27 | 0 | 0 | Workflow deploy-pages.yml activado (antes apagado): build con VITE_DATA_SOURCE=supabase y secrets VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY; PR #3, CI en verde (16 s), merge squash 961085f. Pages activado (fuente GitHub Actions); primer deploy manual OK (build 16 s, deploy 10 s); sitio en vivo verificado (pantalla de login en español, sin errores) |
+| T-10 Romper recursión infinita en RLS | T-10 fix RLS | t-10-fix-rls-recursion | — | #5 | ✅ Fusionada y aplicada en vivo | 2026-11-27 | 2026-11-27 | 1 | 0 | [DELICADA] La prueba de Augusto FALLÓ ("No se pudieron cargar los datos"). Diagnóstico confirmado en el Editor SQL simulando al admin autenticado: ERROR 42P17 infinite recursion detected in policy for relation manager_members. Migración 04: función nueva is_my_subordinate() security definer + my_role() en vez de EXISTS entre policies; Revisor APTO sin hallazgos; PR #5, CI en verde, merge squash e8ed657; aplicada en vivo (Success. No rows returned) |
+| T-11 GRANTs a authenticated | T-11 grants | t-11-grants-authenticated | — | #6 | ✅ Fusionada y aplicada en vivo | 2026-11-27 | 2026-11-27 | 1 | 0+2 menores | [DELICADA] Al verificar la T-10 salió el 2º error: 42501 permission denied for table months. Catálogo verificado: ningún rol tenía SELECT/INSERT/UPDATE/DELETE en las 5 tablas (la migración 01 nunca concedió privilegios). Migración 05: GRANTs a authenticated y service_role sobre las 5 tablas, USAGE sobre el esquema y EXECUTE sobre las 5 funciones; Revisor APTO (2 menores no bloqueantes: endurecer escritura directa en months/profiles y GRANT a service_role redundante → T-12). PR #6, CI en verde (14 s), merge squash ec548b4; aplicada en vivo; verificación RLS como admin autenticado en verde: months 5, expenses 45, topups 4, profiles 1, Top Augusto 202286/45 |
 
 Estados: ⏳ Pendiente · 🛠️ En curso · 🔍 En revisión · 🔁 Cambios pedidos · ✅ Fusionada · ⛔ Bloqueada
 
 ## Pendiente del humano
-- [ ] Probar el dashboard en https://augustoalr.github.io/control-de-gastos-dashboard/ como usuario (PASÓ / FALLÓ / NO PUDE PROBAR): entrar con risturiz73@gmail.com, ver sus gastos reales jul–nov, cambiar de mes, añadir un gasto de prueba y borrarlo
+- [ ] Probar el dashboard en https://augustoalr.github.io/control-de-gastos-dashboard/ como usuario, 2ª vuelta tras T-10 y T-11 (PASÓ / FALLÓ / NO PUDE PROBAR): entrar con risturiz73@gmail.com, ver sus gastos reales jul–nov, cambiar de mes, añadir un gasto de prueba y borrarlo
 - [ ] Recordar: el proyecto Supabase Free se pausa a los 7 días sin actividad — entrar a la app o al panel al menos una vez por semana
 
 ## Problemas abiertos conocidos
