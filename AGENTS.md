@@ -6,7 +6,7 @@ Modo profesor: SÍ   ·   Nivel de riesgo: 3
 - Nombre: Control de Gastos Dashboard
 - Qué es: dashboard personal de gastos en AED para Augusto López Ramos, con meses, recargas, saldo y un Top acumulado por persona. PRD completo en docs/PRD.md.
 - Dueño del producto: Augusto López Ramos (decide producto, dinero y cuentas; prueba la app como usuario; NO certifica código ni seguridad que no puede juzgar).
-- Repo: https://github.com/augustoalr/control-de-gastos-dashboard (privado, rama main, creado vacío el 2026-11-26).
+- Repo: https://github.com/augustoalr/control-de-gastos-dashboard (público desde T-08, rama main, historial limpio).
 - Tipo de app según el manual (03 §2): web full-stack con base de datos. Nivel de riesgo 3 (usuarios reales, datos personales reales): Manager + Coder + Revisor en lo delicado, CI obligatorio, protección de main, prueba funcional de Augusto antes del merge en lo visible.
 
 ## Stack
@@ -23,7 +23,7 @@ Modo profesor: SÍ   ·   Nivel de riesgo: 3
 ## Flujo
 - Una tarea = una conversación = una rama = un PR.
 - Rama: `t-XX-descripcion`. PR: `T-XX: qué hace`.
-- Nunca hagas push directo a main (main PENDIENTE de proteger (T-04, sin verificar; en repo privado Free puede no estar disponible): PR + check "verify").
+- Nunca hagas push directo a main (protegida: PR + check "verify" obligatorio; sin aprobación, porque en un repo de un solo usuario el autor no puede aprobarse a sí mismo).
 - Al terminar: informe final con "Qué hice y por qué (para Augusto)" si Modo profesor = SÍ, y como última línea "Manager: revisa el PR #N (T-XX)".
 - Veredictos posibles: APTO / APROBADO / CAMBIOS NECESARIOS / NO VERIFICABLE / BLOQUEADO. Solo APTO y APROBADO dejan seguir. Un APROBADO vale para un commit concreto.
 - docs/ESTADO.md y docs/APRENDIZAJE.md viven en main; el Manager los actualiza con un PR pequeño "docs(estado): T-XX".

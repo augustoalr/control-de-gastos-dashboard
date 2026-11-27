@@ -1,12 +1,12 @@
 # ESTADO del proyecto
 
-Última actualización: 2026-11-26 16:27 +04 (Asia/Dubái) por Manager (T-03, snapshot en main)
+Última actualización: 2026-11-27 07:13 +04 (Asia/Dubái) por Manager (T-06 fusionada en main, commit 6237773)
 Nivel de riesgo del proyecto: 3 · Modo profesor: SÍ · Lecciones: docs/APRENDIZAJE.md
-Repo: https://github.com/augustoalr/control-de-gastos-dashboard (público desde T-08, rama main; historial limpio en un solo commit, datos de ejemplo)
+Repo: https://github.com/augustoalr/control-de-gastos-dashboard (público desde T-08, rama main; historial limpio en un solo commit 83232e8, datos de ejemplo)
 
 ## Ahora mismo
 - En curso: T-05 — Crear proyecto Supabase y aplicar migraciones
-- Bloqueado por el humano: activar SSH en Muse (Ajustes → Permisos → Protocolos de red directos → ssh a Preguntar) para volver a empujar desde la terminal; confirmar el correo de Supabase cuando se cree la cuenta
+- Bloqueado por el humano: confirmar el correo de Supabase (risturiz73@gmail.com) para crear el proyecto (T-05); el primer enlace caducó
 - Próxima tarea propuesta: T-05 — Crear proyecto Supabase y aplicar migraciones
 
 ## Tabla de tareas
@@ -18,9 +18,9 @@ Repo: https://github.com/augustoalr/control-de-gastos-dashboard (público desde 
 | T-03 Subir snapshot inicial a main | — | main | — | — | ✅ Fusionada | 2026-11-26 | 2026-11-26 | 0 | 0 | 47 archivos en main (commit e4db88c). Push por conector: 403 en git/trees; 8 archivos por Contents API (1 tarjeta por archivo, ineficiente, parado); 39 restantes por subida web en Chrome de Augusto. Deploy key «Tico VM» con escritura + push por SSH desde la terminal de Tico probado. Verificado por clon y diff contra local |
 | T-02 Top acumulado | (hecha antes del manual) | — | — | — | 🛠️ En curso | 2026-11-26 | | 0 | 0 | Código local hecho (TopAcumulado.tsx, RPC get_top_spenders, migración 20261126000000_top_spenders.sql); pendiente de PR |
 | T-04 CI verify + protección de main | — | main | — | PR #1 (cerrado sin fusionar) | ✅ Fusionada | 2026-11-27 | 2026-11-27 | 0 | 0 | Regla creada (PR + 1 aprobación + check verify) pero GitHub la marca «Not enforced»: en repo privado Free NO se aplica. Prueba: PR #1 rompía el build, verify falló y GitHub decía «merging is still available». Opciones para Augusto: pagar Team, hacer público el repo, o aceptar la regla sin efecto y apoyarse en CI + revisión manual |
-| T-08 Limpiar historial y datos de ejemplo | T-08 limpiar historial | limpio (huérfana) | — | — | 🔍 En revisión | 2026-11-27 | | 0 | 0 | Datos reales fuera del repo y del historial: copia en ~/workspace/cdg-real-seed/; 34 gastos de ejemplo (1.402,70 AED) en seed.json y seed.sql; rama `limpio` con 1 solo commit, sin push todavía. El Manager decide el force-push a main y hacer público el repo |
-| T-05 Crear proyecto Supabase y aplicar migraciones | — | — | — | — | ⏳ Pendiente | | | | | [DELICADA] Cuenta nueva con risturiz73@gmail.com pendiente de crear el proyecto; contraseña ya guardada en Vault |
-| T-06 Auth UI + roles | — | — | — | — | ⏳ Pendiente | | | | | [DELICADA] Login, sesiones, guard de rutas, selector de usuario según rol |
+| T-08 Limpiar historial y datos de ejemplo | T-08 limpiar historial | limpio (huérfana) | — | — | ✅ Fusionada | 2026-11-27 | 2026-11-27 | 0 | 0 | Datos reales fuera del repo y del historial: copia en ~/workspace/cdg-real-seed/. Repo viejo borrado y recreado público y vacío por Augusto; main nuevo = commit 83232e8 (34 gastos de ejemplo, 1.402,70 AED; 47 archivos). Deploy key vieja retenida por GitHub («Key is already in use»); llave nueva «Tico VM» cdg2 con escritura. Protección de main recreada en el repo público (PR + 1 aprobación; check verify pendiente de nombrar cuando aparezca en el selector). CI #1 en verde en main (18 s, run 45931473147) |
+| T-05 Crear proyecto Supabase y aplicar migraciones | — | — | — | — | ⏳ Pendiente | | | | | [DELICADA] Cuenta nueva con risturiz73@gmail.com creada 2026-11-27; enlace de confirmación caducó, pendiente pedir uno nuevo cuando Augusto vuelva (~07:30) |
+| T-06 Auth UI + roles | — | limpio | — | #1 | ✅ Fusionada | 2026-11-27 | 2026-11-27 | 3 | 7+1 | [DELICADA] Login, sesiones, guard de rutas, selector de usuario según rol. Commit 9597a05: Revisor 1ª revisión CAMBIOS NECESARIOS (7 hallazgos, 2 graves: escalada de rol y mezcla de gastos); correcciones en 9fc4f90; 2ª revisión CAMBIOS NECESARIOS (docs prometían asignar roles desde la app); corrección de docs en a226997; 3ª revisión APTO. PR #1, CI verify en verde (14 s), merge squash 6237773. Regla de main ajustada por Augusto: sin aprobación (repo de un solo usuario, el autor no puede aprobarse a sí mismo), PR + check verify obligatorio |
 
 Estados: ⏳ Pendiente · 🛠️ En curso · 🔍 En revisión · 🔁 Cambios pedidos · ✅ Fusionada · ⛔ Bloqueada
 
@@ -29,9 +29,9 @@ Estados: ⏳ Pendiente · 🛠️ En curso · 🔍 En revisión · 🔁 Cambios 
 - [ ] Confirmar el correo de Supabase (risturiz73@gmail.com) cuando se cree la cuenta/el proyecto (T-05)
 
 ## Problemas abiertos conocidos
-- CI `verify` en verde en main (última ejecución #11, commit 0782400).
-- En repo público Free, GitHub Pages sí se activa y la protección de ramas sí se aplica (antes, en privado, no: verificado en T-04 con PR #1).
-- SSH saliente apagado en Muse desde el 2026-11-27: el push por terminal falla hasta que Augusto lo active (Ajustes → Permisos → Protocolos de red directos → ssh a Preguntar). Mientras tanto, los cambios suben por conector o navegador.
+- CI `verify` en verde en main (ejecución #1, commit 83232e8, 18 s).
+- Protección de main en el repo público: regla creada y activa (PR + 1 aprobación, sin aviso «Not enforced»); el check `verify` no se pudo nombrar en la regla porque el selector no lo listaba — revisarlo al crear el primer PR de T-06.
+- SSH: llave activa `id_ed25519_cdg2` (huella SHA256:aSUcsR0R0pCfxnnPwQaW0v7PCWgOZXgn3OVhec8X64w); la primera llave quedó retenida por GitHub tras borrar el repo viejo y no se puede reutilizar como deploy key. `/root/.ssh/` no persiste entre reemplazos de la VM: copiar llave + config desde `/home/hatch/.ssh/` si el push falla con «Connection reset».
 
 ## Documentos pendientes
 - docs/DEPLOY.md → creado en T-01 (antes del primer deploy, como pide el manual)
