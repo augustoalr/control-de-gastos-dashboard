@@ -43,6 +43,14 @@ export default function Dashboard({
 
   const role = auth?.user.role ?? 'member';
   const canManageUsers = role === 'admin' || role === 'manager';
+  // El rol en español simple: en la base de datos va en inglés, en la
+  // pantalla se ve en palabras de todos los días.
+  const roleLabel: Record<string, string> = {
+    admin: 'Administrador',
+    manager: 'Encargado',
+    member: 'Miembro',
+    viewer: 'Solo lectura',
+  };
   const viewingOther = viewUserId !== null && viewUserId !== auth?.user.id;
   const readOnly = viewingOther;
 
@@ -141,7 +149,7 @@ export default function Dashboard({
             {auth ? (
               <>
                 <span className="muted" style={{ fontSize: 13 }}>
-                  {auth.user.displayName} · {auth.user.role}
+                  {auth.user.displayName} · {roleLabel[auth.user.role] ?? auth.user.role}
                 </span>
                 <button className="btn secondary" type="button" onClick={() => void auth.onSignOut()}>
                   Cerrar sesión

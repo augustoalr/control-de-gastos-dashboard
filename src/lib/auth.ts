@@ -24,7 +24,8 @@ export function translateAuthError(error: { message: string }): string {
   if (/email not confirmed/i.test(msg)) {
     return 'Confirma tu correo antes de entrar. Revisa tu bandeja de entrada.';
   }
-  if (/user not found/i.test(msg)) return 'No hay ninguna cuenta con ese correo.';
+  // Sin rama para "usuario no existe": todo fallo de credenciales dice lo
+  // mismo, para no revelar si ese correo tiene cuenta o no.
   if (/network|fetch failed|failed to fetch/i.test(msg)) {
     return 'No se pudo conectar. Revisa tu internet e inténtalo de nuevo.';
   }

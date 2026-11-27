@@ -278,14 +278,40 @@ export class SupabaseProvider implements DataProvider {
     return user?.id ?? null;
   }
 
-  /** Usuarios que puedes ver: el Top total ya solo trae a esos (RPC). */
+  /**
+   * Usuarios que puedes ver: el propio + los subordinados (manager) o
+   * todos (admin), leídos de profiles. La policy profiles_read_visible
+   * ya solo devuelve esos, así que la lista sale de la base de datos,
+   * no del Top: un subordinado sin gastos también aparece en el selector.
+   */
   async getViewableUsers(): Promise<UserSummary[]> {
-    const rows = await this.getTopSpenders(null, 50);
-    return rows.map((r) => ({ userId: r.userId, name: r.name, isYou: r.isYou }));
+    const db = this.client();
+    const me = await this.getCurrentUserId();
+    const { data, error } = await db
+      .from('profiles')
+      .select('id, display_name')
+      .order('display_name', { ascending: true });
+    if (error) throw error;
+    return ((data ?? []) as Record<string, unknown>[])
+      .map((p) => ({
+        userId: p.id as string,
+        name: (p.display_name as string) || 'Sin nombre',
+        isYou: me ? (p.id as string) === me : false,
+      }))
+      .sort((a, b) => Number(b.isYou) - Number(a.isYou));
   }
 
   async getDashboard(): Promise<DashboardData> {
     const db = this.client();
+    // De quién se ven los datos: el usuario elegido en el selector, y si
+    // no hay ninguno, el de la sesión. Nunca todos a la vez: sin
+    // viewUserId, un admin o un manager ven SOLO lo suyo (lo de otros
+    // llega solo cuando lo pide explícitamente y el rol lo permite).
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    const ownerId = this.viewUserId ?? user?.id ?? null;
+    if (!ownerId) return { months: [], report: recomputeReport([]) };
     // Tres lecturas RLS directas a las tablas (el usuario solo ve lo suyo
     // o lo de sus subordinados) y ensamblaje en cliente. Los totales se
     // recalculan en cliente igual que en local; no se lee month_summary.
@@ -299,7 +325,7 @@ export class SupabaseProvider implements DataProvider {
     if (eErr) throw eErr;
     if (tErr) throw tErr;
     const months: Month[] = ((mRows ?? []) as Record<string, unknown>[])
-      .filter((r) => !this.viewUserId || (r.user_id as string) === this.viewUserId)
+      .filter((r) => (r.user_id as string) === ownerId)
       .map((r) => ({
       id: r.id as string,
       userId: r.user_id as string,
@@ -354,6 +380,10 @@ export class SupabaseProvider implements DataProvider {
 
   async updateExpense(id: string, input: NewExpense): Promise<Expense> {
     const db = this.client();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    if (!user) throw new Error('No hay sesión iniciada.');
     const { data, error } = await db
       .from('expenses')
       .update({
@@ -370,7 +400,12 @@ export class SupabaseProvider implements DataProvider {
   }
 
   async deleteExpense(id: string): Promise<void> {
-    const { error } = await this.client().from('expenses').delete().eq('id', id);
+    const db = this.client();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    if (!user) throw new Error('No hay sesión iniciada.');
+    const { error } = await db.from('expenses').delete().eq('id', id);
     if (error) throw error;
   }
 

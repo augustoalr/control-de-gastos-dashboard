@@ -9,7 +9,7 @@ Augusto registra sus gastos en un Excel (Expense_Report, hojas EXP1…EXPn) y en
 - Secundario: sus subordinados. Cada uno tiene su perfil con sus gastos. Un manager ve los gastos de sus subordinados y un Top acumulado por persona; un viewer solo ve totales; un admin ve y gestiona todo. Los roles se guardan en `profiles.role` (`admin`, `manager`, `member`, `viewer`) y se hacen cumplir en la base de datos (RLS), nunca solo en la pantalla.
 
 ## 3. Propuesta de valor
-En una pantalla, Augusto ve cuánto gastó, cuánto le queda y quién gasta más, con sus datos reales y sin tocar el Excel.
+En una pantalla, Augusto ve cuánto gastó, cuánto le queda y quién gasta más, con sus datos de ejemplo en la demo pública y sin tocar el Excel.
 
 ## 4. MVP (lo mínimo para probar la idea)
 1. Dashboard con selector de mes (JUL–NOV, DIC como EXP6 deshabilitado), 4 indicadores (saldo, gastos, recarga, % gastado), barras de gastos + línea de recargas, donut de % gastado y donut de categorías.
@@ -33,7 +33,7 @@ En una pantalla, Augusto ve cuánto gastó, cuánto le queda y quién gasta más
 - Web (SPA estática) — Vite + React 19 + TypeScript + Supabase (Postgres + Auth + RLS) + GitHub Pages en el futuro — motivo: sin servidor propio, gratis en Free, y el mismo código sirve en local y en Supabase cambiando `VITE_DATA_SOURCE` (detalle en docs/ARCHITECTURE.md).
 
 ## 8. Restricciones
-- Presupuesto: cero (Supabase Free, GitHub Free) · Plazo: sin fecha fija · Datos sensibles: sí, gastos personales reales de Augusto (el repo es privado por eso; el seed local lleva datos reales).
+- Presupuesto: cero (Supabase Free, GitHub Free) · Plazo: sin fecha fija · Datos sensibles: sí, gastos personales reales de Augusto (viven solo en su Supabase privado, con RLS; el repo es público y el seed local lleva solo datos de ejemplo).
 
 ## 9. Criterio de éxito
 - Augusto abre el dashboard, cambia de mes, ve los totales reales de ese mes (iguales que en el Excel) y el Top Mes/Total, y añade un gasto de prueba que aparece en el total.
